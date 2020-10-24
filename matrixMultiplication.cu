@@ -44,7 +44,6 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     cudaFree(d_y);
     cudaFree(d_z);
 }
-
 int main()
 {
     srand(time(NULL));
