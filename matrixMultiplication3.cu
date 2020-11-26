@@ -20,7 +20,6 @@ __global__ void multiplyMatricesKernel(float* d_x, float* d_y, float* d_z, int m
 
 void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
 {
-
     int elements_x = m * n * sizeof(float);
     int elements_y = n * p * sizeof(float);
     int elements_z = m * p * sizeof(float);
