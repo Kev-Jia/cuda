@@ -30,7 +30,7 @@ void errorCheck(unsigned int line)
 void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
 {
     dim3 numOfBlocks(ceil(p / 32.0), ceil(m / 32.0), 1);
-    dim3 numOfThreads(8, 8, 1);
+    dim3 numOfThreads(32, 32, 1);
 
     size_t elements_x = m * n * sizeof(float);
     size_t elements_y = n * p * sizeof(float);
