@@ -27,6 +27,7 @@ __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, 
     // this variable will prevent writing conflicts to result matrix in global memory
     float result = 0;
 
+    // each block will generate one tile of the result matrix
     // have each thread iterate through tiles of the matrices row-wise
     // each thread will end up generating one element of result matrix result iteratively using tiles
     // each iteration will have a partially generate a tile of the result matrix
