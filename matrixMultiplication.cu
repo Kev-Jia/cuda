@@ -99,9 +99,9 @@ int main()
     srand(time(NULL));
     
     // define and initialize dimension variables for the 3 matrices
-    size_t m = 4096;
-    size_t n = 4096;
-    size_t p = 4096;
+    size_t m = rand() % 257 + 3840;
+    size_t n = rand() % 257 + 3840;
+    size_t p = rand() % 257 + 3840;
 
     // dynamically allocate DRAM memory for the matrices to account for the matrices being perhaps too big to be statically allocated
     float* x = (float*) malloc(m * n * sizeof(float));
