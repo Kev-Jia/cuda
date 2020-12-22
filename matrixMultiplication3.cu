@@ -33,9 +33,9 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     dim3 numOfThreads(64, 1, 1);
 
     // define and initialize the variables containing number of bytes in each matrix 
-    int elements_x = m * n * sizeof(float);
-    int elements_y = n * p * sizeof(float);
-    int elements_z = m * p * sizeof(float);
+    int bytes_x = m * n * sizeof(float);
+    int bytes_y = n * p * sizeof(float);
+    int bytes_z = m * p * sizeof(float);
 
     // define the pointers that will point to the start of allocated device memory for each matrix
     float* d_x;
@@ -43,19 +43,19 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     float* d_z;
 
     // allocate global memory for the matrices on the device
-    cudaMalloc((void**) &d_x, elements_x);
-    cudaMalloc((void**) &d_y, elements_y);
-    cudaMalloc((void**) &d_z, elements_z);
+    cudaMalloc((void**) &d_x, bytes_x);
+    cudaMalloc((void**) &d_y, bytes_y);
+    cudaMalloc((void**) &d_z, bytes_z);
 
     // copy the data of input matrices to the allocated global memory on the device
-    cudaMemcpy(d_x, x, elements_x, cudaMemcpyHostToDevice); 
-    cudaMemcpy(d_y, y, elements_y, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_x, x, bytes_x, cudaMemcpyHostToDevice); 
+    cudaMemcpy(d_y, y, bytes_y, cudaMemcpyHostToDevice);
 
     // call the kernel
     multiplyMatricesKernel<<<ceil(m / 64.0), 64>>>(d_x, d_y, d_z, m, n, p);
     
     // copy the data of the result matrix from device global memory to host DRAM
-    cudaMemcpy(z, d_z, elements_z, cudaMemcpyDeviceToHost);
+    cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
     
     // free the allocated device global memory
     cudaFree(d_x);

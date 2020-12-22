@@ -99,9 +99,9 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     dim3 numOfThreads(TILE_WIDTH, TILE_WIDTH, 1);
 
     // define and initialize the variables containing number of bytes in each matrix 
-    size_t elements_x = m * n * sizeof(float);
-    size_t elements_y = n * p * sizeof(float);
-    size_t elements_z = m * p * sizeof(float);
+    size_t bytes_x = m * n * sizeof(float);
+    size_t bytes_y = n * p * sizeof(float);
+    size_t bytes_z = m * p * sizeof(float);
 
     // define the pointers that will point to the start of allocated device memory for each matrix
     float* d_x;
@@ -109,17 +109,17 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     float* d_z;
 
     // allocate global memory for the matrices on the device and check for CUDA errors
-    cudaMalloc((void**) &d_x, elements_x);
+    cudaMalloc((void**) &d_x, bytes_x);
     errorCheck(__LINE__);
-    cudaMalloc((void**) &d_y, elements_y);
+    cudaMalloc((void**) &d_y, bytes_y);
     errorCheck(__LINE__);
-    cudaMalloc((void**) &d_z, elements_z);
+    cudaMalloc((void**) &d_z, bytes_z);
     errorCheck(__LINE__);
 
     // copy the data of input matrices to the allocated global memory on the device and check for CUDA errors
-    cudaMemcpy(d_x, x, elements_x, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_x, x, bytes_x, cudaMemcpyHostToDevice);
     errorCheck(__LINE__);
-    cudaMemcpy(d_y, y, elements_y, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_y, y, bytes_y, cudaMemcpyHostToDevice);
     errorCheck(__LINE__);
 
     // call the kernel and check for CUDA errors
@@ -127,7 +127,7 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     errorCheck(__LINE__);
 
     // copy the data of the result matrix from device global memory to host DRAM and check for CUDA errors
-    cudaMemcpy(z, d_z, elements_z, cudaMemcpyDeviceToHost);
+    cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
     errorCheck(__LINE__);
 
     // free the allocated device global memory and check for CUDA errors
