@@ -110,7 +110,7 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
     errorCheck(__LINE__);
 
-    // free the allocated device global memory and check for CUDA errors
+    // free the allocated global memory and check for CUDA errors
     cudaFree(d_x);
     errorCheck(__LINE__);
     cudaFree(d_y);

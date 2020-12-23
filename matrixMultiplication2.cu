@@ -57,7 +57,7 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     // copy the data of the result matrix from global memory to host DRAM
     cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
     
-    // free the allocated device global memory
+    // free the allocated global memory
     cudaFree(d_x);
     cudaFree(d_y);
     cudaFree(d_z);
@@ -75,7 +75,7 @@ int main()
     srand(time(NULL));
     
     // define and initialize dimension variables for the 3 matrices
-    // these variables will be in the range 3840 to 4096
+    // these variables will have values in a range from 3840 to 4096
     size_t m = rand() % 257 + 3840;
     size_t n = rand() % 257 + 3840;
     size_t p = rand() % 257 + 3840;
