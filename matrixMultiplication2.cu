@@ -7,35 +7,21 @@
 // CUDA kernel function
 __global__ void multiplyMatricesKernel(float* d_x, float* d_y, float* d_z, int m, int n, int p)
 {
-    // define and initialize variables that will be used in indexing - this is for brevity
+    // define and initialize the variable that will be used in indexing - this is for brevity
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int j = blockDim.y * blockIdx.y + threadIdx.y;
     
-    // only have threads within the range of the result matrix dimensions calculate an element of it
+    // only have threads within the range of the amount of rows of the result matrix to calculate an element of it
     // this is to prevent global memory segfaults
-    if(i < p && j < m)
+    if(i < m)
     {
-        for(int k = 0; k < n; ++k)
-        {   
-            // calculate the dot product of each element of the result matrix
-            d_z[j * p + i] += d_x[j * n + k] * d_y[k * p + i];
+        // calculate each row of the result matrix
+        for(int j = 0; j < p; ++j)
+        {
+            for(int k = 0; k < n; ++k)
+            {
+                d_z[i * p + j] += d_x[i * n + k] * d_y[k * p + j];
+            }
         }
-    }
-}
-
-// error checking function - checks for CUDA errors
-void errorCheck(unsigned int line)
-{
-    // get most recent CUDA error
-    cudaError_t cudaError = cudaGetLastError();
-    
-    // if error code wasn't a code describing success
-    if(cudaError != cudaSuccess)
-    {
-        // output that there has been a CUDA error in the line of the CUDA function call
-        // and exit the program
-        printf("CUDA error in line %u in file %s: %s\n", line - 1, __FILE__, cudaGetErrorString(cudaError));
-        exit(EXIT_FAILURE);
     }
 }
 
@@ -43,115 +29,86 @@ void errorCheck(unsigned int line)
 void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
 {
     // define and initialize dimension variables containing data regarding the dimensions of the grid and dimensions of each block
-    dim3 numOfBlocks(ceil(p / 32.0), ceil(m / 32.0), 1);
-    dim3 numOfThreads(32, 32, 1);
-    
-    // define and initialize the variables containing number of bytes in each matrix
-    size_t bytes_x = m * n * sizeof(float);
-    size_t bytes_y = n * p * sizeof(float);
-    size_t bytes_z = m * p * sizeof(float);
-    
+    dim3 numOfBlocks(ceil(m / 64.0), 1, 1);
+    dim3 numOfThreads(64, 1, 1);
+
+    // define and initialize the variables containing number of bytes in each matrix 
+    int bytes_x = m * n * sizeof(float);
+    int bytes_y = n * p * sizeof(float);
+    int bytes_z = m * p * sizeof(float);
+
     // define the pointers that will point to the start of allocated device memory for each matrix
     float* d_x;
     float* d_y;
     float* d_z;
-    
-    // allocate global memory for the matrices on the device and check for CUDA errors
+
+    // allocate global memory for the matrices on the device
     cudaMalloc((void**) &d_x, bytes_x);
-    errorCheck(__LINE__);
     cudaMalloc((void**) &d_y, bytes_y);
-    errorCheck(__LINE__);
     cudaMalloc((void**) &d_z, bytes_z);
-    errorCheck(__LINE__);
-    
-    // copy the data of input matrices to the allocated global memory on the device and check for CUDA errors
-    cudaMemcpy(d_x, x, bytes_x, cudaMemcpyHostToDevice);
-    errorCheck(__LINE__);
+
+    // copy the data of input matrices to the allocated global memory on the device
+    cudaMemcpy(d_x, x, bytes_x, cudaMemcpyHostToDevice); 
     cudaMemcpy(d_y, y, bytes_y, cudaMemcpyHostToDevice);
-    errorCheck(__LINE__);
 
-    // call the CUDA kernel and check for CUDA errors
+    // call the CUDA kernel
     multiplyMatricesKernel<<<numOfBlocks, numOfThreads>>>(d_x, d_y, d_z, m, n, p);
-    errorCheck(__LINE__);
-
-    // copy the data of the result matrix from global memory to host DRAM and check for CUDA errors
+    
+    // copy the data of the result matrix from global memory to host DRAM
     cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
-    errorCheck(__LINE__);
-
-    // free the allocated device global memory and check for CUDA errors
+    
+    // free the allocated device global memory
     cudaFree(d_x);
-    errorCheck(__LINE__);
     cudaFree(d_y);
-    errorCheck(__LINE__);
     cudaFree(d_z);
-    errorCheck(__LINE__);
 }
 
 int main()
 {
+    // define structs that will enable us to get the exec time of the program
+    struct timespec start, end;
+
+    // get the details regarding the start time of this program and store it in the start struct
+    clock_gettime(CLOCK_REALTIME, &start);
+
     // initialize pseudo-random number generator with seed of the current seconds since 01/01/1970
     srand(time(NULL));
-
-    // define and initialize dimension variables to be random values from 1 to 8 for the 3 matrices
-    size_t m = rand() % 8 + 1;
-    size_t n = rand() % 8 + 1;
-    size_t p = rand() % 8 + 1;
+    
+    // define and initialize dimension variables for the 3 matrices
+    // these variables will be in the range 3840 to 4096
+    size_t m = rand() % 257 + 3840;
+    size_t n = rand() % 257 + 3840;
+    size_t p = rand() % 257 + 3840;
 
     // statically define all the matrices
     float x[m * n];
     float y[n * p];
     float z[m * p];
 
-    // output matrix x and beforehand set each of its elements to a pseudo-random value from -64 to 64
-    printf("X =\n[");
+    // assign a pseudo-random value from -64 to 64 for each element in input matrix x
     for(int i = 0; i < sizeof(x) / sizeof(float); ++i)
     {
         x[i] = rand() % 129 - 64;
-        printf("%.1f ", x[i]);
-        if((i + 1) % n == 0 && i != (sizeof(x) / sizeof(float) - 1))
-        {
-            printf("]\n[");
-        }
-        if(i == (sizeof(x) / sizeof(float) - 1))
-        {
-            printf("]\n\n");
-        }
     }
-    
-    // output matrix y and beforehand set each of its elements to a pseudo-random value from -64 to 64
-    printf("Y = \n[");
+        
+    // assign a pseudo-random value from -64 to 64 for each element in input matrix y
     for(int i = 0; i < sizeof(y) / sizeof(float); ++i)
     {
         y[i] = rand() % 129 - 64;
-        printf("%.1f ", y[i]);
-        if((i + 1) % p == 0 && i != (sizeof(y) / sizeof(float) - 1))
-        {
-            printf("]\n[");
-        }
-        if(i == (sizeof(y) / sizeof(float) - 1))
-        {
-            printf("]\n\n");
-        }
-    }
-
-    // multiply the input matrices x and y
-    multiplyMatrices(x, y, z, m, n, p);
-
-    // output result matrix z
-    printf("Z = \n[");
-    for(int i = 0; i < sizeof(z) / sizeof(float); ++i)
-    {   
-        printf("%.1f ", z[i]);
-        if((i + 1) % p == 0 && i != (sizeof(z) / sizeof(float) - 1))
-        {
-            printf("]\n[");
-        }
-        if(i == (sizeof(z) / sizeof(float) - 1))
-        {
-            printf("]\n\n");
-        }
     }
     
+    // multiply the input matrices x and y
+    multiplyMatrices(x, y, z, m, n, p);
+    
+    // get the details regarding the end time of this program and store it in the end struct
+    clock_gettime(CLOCK_REALTIME, &end);
+
+    // calculate exec time in microseconds
+    time_t execTime = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+
+    // output exec time
+    printf("Execution time: %d microseconds.", execTime);
+
     // exit program
     return 0;
 }
