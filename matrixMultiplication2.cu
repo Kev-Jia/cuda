@@ -81,9 +81,9 @@ int main()
     size_t p = rand() % 257 + 3840;
 
     // dynamically allocate DRAM memory for the matrices to account for the matrices being pehaps too big to be statically allocated
-    float x = (float*) malloc(m * n * sizeof(float));
-    float y = (float*) malloc(n * p * sizeof(float));
-    float z = (float*) malloc(m * p * sizeof(float));
+    float* x = (float*) malloc(m * n * sizeof(float));
+    float* y = (float*) malloc(n * p * sizeof(float));
+    float* z = (float*) malloc(m * p * sizeof(float));
 
     // assign a pseudo-random value from -64 to 64 for each element in input matrix x
     for(int i = 0; i < sizeof(x) / sizeof(float); ++i)
