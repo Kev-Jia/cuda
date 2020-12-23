@@ -51,10 +51,10 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     cudaMemcpy(d_x, x, bytes_x, cudaMemcpyHostToDevice); 
     cudaMemcpy(d_y, y, bytes_y, cudaMemcpyHostToDevice);
 
-    // call the kernel
+    // call the CUDA kernel
     multiplyMatricesKernel<<<ceil(m / 64.0), 64>>>(d_x, d_y, d_z, m, n, p);
     
-    // copy the data of the result matrix from device global memory to host DRAM
+    // copy the data of the result matrix from global memory to host DRAM
     cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
     
     // free the allocated device global memory
@@ -73,10 +73,10 @@ int main()
     int n = rand() % 8 + 1;
     int p = rand() % 8 + 1;
 
-    // statically define and initialize the matrices to be entirely 0
-    float x[m * n] = {0};
-    float y[n * p] = {0};
-    float z[m * p] = {0};
+    // statically define all the matrices
+    float x[m * n];
+    float y[n * p];
+    float z[m * p];
 
     // output matrix x and beforehand set each of its elements to a pseudo-random value from -64 to 64
     printf("X =\n[");

@@ -102,11 +102,11 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
     cudaMemcpy(d_y, y, bytes_y, cudaMemcpyHostToDevice);
     errorCheck(__LINE__);
 
-    // call the kernel and check for CUDA errors
+    // call the CUDA kernel and check for CUDA errors
     tiledMultiplyMatricesKernel<<<numOfBlocks, numOfThreads>>>(d_x, d_y, d_z, m, n, p);
     errorCheck(__LINE__);
 
-    // copy the data of the result matrix from device global memory to host DRAM and check for CUDA errors
+    // copy the data of the result matrix from global memory to host DRAM and check for CUDA errors
     cudaMemcpy(z, d_z, bytes_z, cudaMemcpyDeviceToHost);
     errorCheck(__LINE__);
 
@@ -150,12 +150,6 @@ int main()
     for(int i = 0; i < n * p; ++i)
     {
         y[i] = rand() % 129 - 64;
-    }
-
-    // initialize the z result matrix to be entirely 0
-    for(int i = 0; i < m * p; ++i)
-    {
-        z[i] = 0;
     }
 
     // multiply the input matrices x and y
