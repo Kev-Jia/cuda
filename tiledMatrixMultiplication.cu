@@ -144,7 +144,7 @@ int main()
     // define structs that will enable us to get exec time of the program
     struct timespec start, end;
 
-    // get the details regarding start time of this program and store it in the start struct
+    // get the details regarding the start time of this program and store it in the start struct
     clock_gettime(CLOCK_REALTIME, &start);
 
     // initialize pseudo-random number generator with seed of the current seconds since 01/01/1970
