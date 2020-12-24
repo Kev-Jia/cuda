@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 // define constant TILE_WIDTH
-#define TILE_WIDTH 16
+#define TILE_WIDTH 32
 
 // CUDA kernel function
 __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, int m, int n, int p)
