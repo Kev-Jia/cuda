@@ -125,7 +125,7 @@ int main()
     // define and initialize size variables for each array
     // the input and result arrays have the same size and thus share a size variable
     // int for result tile length otherwise typecasting to float in the host function that calls the kernel will have undefined behaviour
-    size_t length = rand() % 65537 + 983040;
+    size_t length = rand() % 1048577 + 15728640;
     size_t maskLength = 2 * (rand() % 64 + 192) + 1;
     int N_TILE_LENGTH = BLOCK_SIZE - (maskLength - 1);
 
