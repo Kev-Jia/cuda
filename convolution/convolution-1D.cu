@@ -9,6 +9,7 @@ __global__ void convolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, siz
 {
     // define and initialize the variable that will be used for indexing
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+
     // define and initialize the variable that will allow the mask to align correctly with input array d_m
     // integer division is fine because it always truncates
     // we will only be using odd values for maskLength anyway
