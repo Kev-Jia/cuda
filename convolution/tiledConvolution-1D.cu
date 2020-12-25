@@ -4,22 +4,50 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define BLOCK_WIDTH 1024
+// define constant BLOCK_SIZE
+#define BLOCK_SIZE 1024
 
-
-// initialize pseudo-random number generator with seed of current seconds since 01/01/1970
-srand(time(NULL));
-
-// define and initialize mask array size variable as global
-// this is needed as maskLength is needed to define and initialize global variable TILE_WIDTH
-size_t maskLength = 2 * (rand() % 2049 + 30720) - 1;
-
-// define and initialize tile size variable
-size_t TILE_WIDTH = BLOCK_WIDTH - (maskLength - 1);
-
-__global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, size_t length, size_t maskLength)
+__global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, size_t length, size_t maskLength, int N_TILE_LENGTH)
 {
+    // define and initialize the variable where the resulting element of the convolution operation will be calculated and stored
+    // this is to minimize writes to global memory
+    // as automatic variables are stored in register memory
+    float result = 0;
 
+    // define and initialize indexing variables for input and output arrays
+    // this is for brevity
+    int n_index = blockIdx.x * N_TILE_LENGTH + threadIdx.x;
+    int m_index = n_index - (maskLength / 2);
+
+    // define shared memory input array tile
+    __shared__ float tile_m[BLOCK_SIZE];
+
+    // if the input array index is within the bounds of the input array
+    // then load the elements of d_m into their respective positions in the tile
+    // otherwise just set the element of the tile to 0 (the element becomes a "ghost" element)
+    // 0.0 for float calculation
+    if(m_index >= 0 && m_index < length)
+    {
+        tile_m[threadIdx.x] = d_m[m_index];
+    }
+    else
+    {
+        tile_m[threadIdx.x] = 0;
+    }
+    
+    // only allow a certain amount of threads per block to participate in calculating the result variable
+    // because we only need to calculate N_TILE_LENGTH elements
+    // < and not <= because of 0-based indexing
+    if(threadIdx.x < N_TILE_LENGTH)
+    {
+        // calculate value of result element
+        for(int i = 0; i < maskLength; ++i)
+        {
+            result += d_mask[i] * tile_m[threadIdx.x + i];
+        }
+        // write result variable to corresponding element of result array
+        d_n[n_index] = result;
+    }
 }
 
 // error checking function - checks for CUDA errors
@@ -39,16 +67,15 @@ void errorCheck(unsigned int line)
 }
 
 // host function that calls the CUDA kernel
-void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskLength)
+void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskLength, int N_TILE_LENGTH)
 {
     // define and initialize dimension variables containing data regarding the dimensions of the grid and the dimensions of each block
-    dim3 numOfBlocks(ceil(length / BLOCK_SIZE), 1, 1);
+    dim3 numOfBlocks(ceil(length / (float) N_TILE_LENGTH), 1, 1);
     dim3 numOfThreads(BLOCK_SIZE, 1, 1);
 
     // define and initialize variables containing the number of bytes in each array
     size_t bytes_m = length * sizeof(float);
     size_t bytes_mask = maskLength * sizeof(float);
-    size_t bytes_n = length * sizeof(float);
 
     // define the pointers that will point to the start of allocated device memory for each array
     float* d_m;
@@ -56,11 +83,12 @@ void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskL
     float* d_n;
 
     // allocate global memory for each array on the device and check for CUDA errors
+    // input bytes variable is used for result array because both arrays have the same length
     cudaMalloc((void**) &d_m, bytes_m);
     errorCheck(__LINE__);
     cudaMalloc((void**) &d_mask, bytes_mask);
     errorCheck(__LINE__);
-    cudaMalloc((void**) &d_n, bytes_n);
+    cudaMalloc((void**) &d_n, bytes_m);
     errorCheck(__LINE__);
 
     // copy the data of each array to allocated global memory on the device and check for CUDA errors
@@ -70,11 +98,11 @@ void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskL
     errorCheck(__LINE__);
 
     // call the CUDA kernel and check for CUDA errors
-    tiledConvolution_1D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, length, maskLength);
+    tiledConvolution_1D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, length, maskLength, N_TILE_LENGTH);
     errorCheck(__LINE__);
     
     // copy the data of the result array from global memory to host DRAM and check for CUDA errors
-    cudaMemcpy(n, d_n, bytes_n, cudaMemcpyDeviceToHost);
+    cudaMemcpy(n, d_n, bytes_m, cudaMemcpyDeviceToHost);
     errorCheck(__LINE__);
     
     // free the allocated global memory and check for CUDA errors
@@ -96,8 +124,10 @@ int main()
     
     // define and initialize size variables for each array
     // the input and result arrays have the same size and thus share a size variable
+    // int for result tile length otherwise typecasting to float in the host function that calls the kernel will have undefined behaviour
     size_t length = rand() % 65537 + 983040;
-    size_t maskLength = 2 * (rand() % 2049 + 30720) - 1;
+    size_t maskLength = 2 * (rand() % 64 + 192) + 1;
+    int N_TILE_LENGTH = BLOCK_SIZE - (maskLength - 1);
 
     // dynamically allocate DRAM memory for the arrays to account for them perhaps being too big to be statically allocated
     float* m = (float*) malloc(length * sizeof(float));
@@ -117,7 +147,7 @@ int main()
     }
 
     // perform 1D convolution operation on input array m using a given mask array
-    convolution_1D(m, mask, n, length, maskLength);
+    convolution_1D(m, mask, n, length, maskLength, N_TILE_LENGTH);
 
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
