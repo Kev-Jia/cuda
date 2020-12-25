@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 // define constant TILE_WIDTH
-#define TILE_WIDTH 32 
+#define TILE_WIDTH 32
 
 // CUDA kernel function
 __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, int m, int n, int p)
@@ -25,6 +25,8 @@ __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, 
     int colNum = B_x * blockDim.x + T_x;
 
     // this variable will prevent writing conflicts to result matrix in global memory
+    // also reduces global memory traffic
+    // as automatic variables are stored in register memory
     float result = 0;
 
     // each block will generate one tile of the result matrix
