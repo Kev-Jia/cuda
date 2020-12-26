@@ -43,13 +43,12 @@ __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, 
         __syncthreads();
         
         // calculate a part of the dot product of each element of the result matrix
-        // or in other words fully calculate the dot product of each element of the tile of the result matrix
         for(int j = 0; j < TILE_WIDTH; ++j)
         {
             result += tile_x[T_y][j] * tile_y[j][T_x];
         }
 
-        // sync all the threads to prevent the contents of the shared memory being overwritten by faster threads when they finish one iteration of the for loop
+        // sync all the threads to prevent the contents of the shared memory being overwritten by faster threads when they finish one iteration of the most outside for loop
         __syncthreads();
     }
 
