@@ -14,7 +14,7 @@ __global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n
     // as automatic variables are stored in register memory
     float result = 0;
 
-    // define and initialize indexing variables for input and output arrays
+    // define and initialize indexing variables for input and result arrays
     // this is for brevity
     int n_index = blockIdx.x * N_TILE_LENGTH + threadIdx.x;
     int m_index = n_index - (maskLength / 2);
@@ -22,10 +22,9 @@ __global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n
     // define shared memory input array tile
     __shared__ float tile_m[BLOCK_SIZE];
 
-    // if the input array index is within the bounds of the input array
+    // if the input array index variable is within the bounds of the input array
     // then load the elements of d_m into their respective positions in the tile
     // otherwise just set the element of the tile to 0 (the element becomes a "ghost" element)
-    // 0.0 for float calculation
     if(m_index >= 0 && m_index < length)
     {
         tile_m[threadIdx.x] = d_m[m_index];
