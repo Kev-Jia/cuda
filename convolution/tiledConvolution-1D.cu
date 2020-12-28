@@ -8,7 +8,7 @@
 #define BLOCK_SIZE 1024
 
 // CUDA kernel function
-__global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, size_t length, size_t maskLength, int N_TILE_LENGTH)
+__global__ void tiledConvolution_1D_Kernel(float* d_m, const float* __restrict__ d_mask, float* d_n, size_t length, size_t maskLength, int N_TILE_LENGTH)
 {
     // define and initialize the variable where the resulting element of the convolution operation will be calculated and stored
     // this is to minimize writes to global memory
