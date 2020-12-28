@@ -14,7 +14,7 @@ __global__ void convolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, siz
     // integer division is fine because it always truncates
     // we will only be using odd values for maskLength anyway
     // the truncation of integer division will provide the perfect offset for aligning the centre element of the mask with the target d_m element
-    int m_startingIndex = i - (maskLength / 2);
+    int m_index = i - (maskLength / 2);
 
     // initialize the to-be-generated result element of result array d_n to be 0 ready for accumulation in the for loop directly below
     d_n[i] = 0;
@@ -31,11 +31,11 @@ __global__ void convolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, siz
         // this ghost element stuff is done implicitly
         // as there is no need to do it explicitly, since 0 does not change the resulting element of the convolution operation on a specific element
         // we just leave the accumulating result of the convolution operation alone if the indexes are out of bounds
-        if(m_startingIndex + j >= 0 && m_startingIndex + j < length)
+        if(m_index + j >= 0 && m_index + j < length)
         {
             // if the boundary check is satisfied
             // then accumulate one part of the convolution operation to the result element of the result d_n array
-            d_n[i] += d_m[m_startingIndex + j] * d_mask[j];
+            d_n[i] += d_m[m_index + j] * d_mask[j];
         }
     }
 }
