@@ -29,8 +29,8 @@ __global__ void multiplyMatricesKernel(float* d_x, float* d_y, float* d_z, int m
 void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
 {
     // define and initialize dimension variables containing data regarding the dimensions of the grid and dimensions of each block
-    dim3 numOfBlocks(ceil(m / 64.0), 1, 1);
-    dim3 numOfThreads(64, 1, 1);
+    dim3 numOfBlocks(ceil(m / 1024.0), 1, 1);
+    dim3 numOfThreads(1024, 1, 1);
 
     // define and initialize the variables containing number of bytes in each matrix 
     int bytes_x = m * n * sizeof(float);
