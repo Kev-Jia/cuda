@@ -7,6 +7,7 @@
 // define constant BLOCK_SIZE
 #define BLOCK_SIZE 1024
 
+// CUDA kernel function
 __global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, size_t length, size_t maskLength, int N_TILE_LENGTH)
 {
     // define and initialize the variable where the resulting element of the convolution operation will be calculated and stored
@@ -14,10 +15,9 @@ __global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n
     // as automatic variables are stored in register memory
     float result = 0;
 
-    // define and initialize indexing variables for input and result arrays
-    // this is for brevity
+    // define and initialize indexing variables for input and result arrays - this is for brevity
     int n_index = blockIdx.x * N_TILE_LENGTH + threadIdx.x;
-    int m_index = n_index - (maskLength / 2);
+    int m_index = n_index - maskLength / 2;
 
     // define shared memory input array tile
     __shared__ float tile_m[BLOCK_SIZE];
@@ -34,6 +34,9 @@ __global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n
         tile_m[threadIdx.x] = 0;
     }
     
+    // sync all the threads in the block so faster threads don't work with uninitialized memory
+    __syncthreads();
+    
     // only allow a certain amount of threads per block to participate in calculating the result variable
     // because we only need to calculate N_TILE_LENGTH elements
     // < and not <= because of 0-based indexing
@@ -44,6 +47,7 @@ __global__ void tiledConvolution_1D_Kernel(float* d_m, float* d_mask, float* d_n
         {
             result += d_mask[i] * tile_m[threadIdx.x + i];
         }
+        
         // write result variable to corresponding element of result array
         d_n[n_index] = result;
     }
@@ -123,7 +127,7 @@ int main()
     
     // define and initialize size variables for each array
     // the input and result arrays have the same size and thus share a size variable
-    // int for result tile length otherwise typecasting to float in the host function that calls the kernel will have undefined behaviour
+    // int instead of size_t for result tile length because otherwise typecasting to float will cause errors in the host function that calls the kernel
     size_t length = rand() % 1048577 + 15728640;
     size_t maskLength = 2 * (rand() % 64 + 192) + 1;
     int N_TILE_LENGTH = BLOCK_SIZE - (maskLength - 1);

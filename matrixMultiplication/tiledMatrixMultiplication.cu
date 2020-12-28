@@ -14,15 +14,9 @@ __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, 
     __shared__ float tile_x[TILE_WIDTH][TILE_WIDTH];
     __shared__ float tile_y[TILE_WIDTH][TILE_WIDTH];
     
-    // define and initialize variables that will be used in indexing - this is for brevity
-    int T_x = threadIdx.x;
-    int T_y = threadIdx.y;
-    
-    int B_x = blockIdx.x;
-    int B_y = blockIdx.y;
-    
-    int rowNum = B_y * blockDim.y + T_y;
-    int colNum = B_x * blockDim.x + T_x;
+    // define and initialize the variables that will be used for indexing - this is for brevity
+    int rowNum = blockIdx.y * blockDim.y + threadIdx.y;
+    int colNum = blockIdx.x * blockDim.x + threadIdx.x;
 
     // this variable will prevent writing conflicts to result matrix in global memory
     // also reduces global memory traffic
@@ -38,21 +32,21 @@ __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, 
         // load elements of d_x and d_y into their respective positions in their tiles
         // only load these elements if they are within the range of the dimensions of the two input matrices
         // this allows the tiled algorithm to work with arbitrary matrix dimensions
-        if(rowNum < m && (i * TILE_WIDTH + T_x) < n)
+        if(rowNum < m && (i * TILE_WIDTH + threadIdx.x) < n)
         {
-            tile_x[T_y][T_x] = d_x[rowNum * n + i * TILE_WIDTH + T_x];
+            tile_x[threadIdx.y][threadIdx.x] = d_x[rowNum * n + i * TILE_WIDTH + threadIdx.x];
         }
         else
         {
-            tile_x[T_y][T_x] = 0.0;    
+            tile_x[threadIdx.y][threadIdx.x] = 0.0;    
         }
-        if((i * TILE_WIDTH + T_y) < n && colNum < p)
+        if((i * TILE_WIDTH + threadIdx.y) < n && colNum < p)
         {
-            tile_y[T_y][T_x] = d_y[(i * TILE_WIDTH + T_y) * p + colNum];
+            tile_y[threadIdx.y][threadIdx.x] = d_y[(i * TILE_WIDTH + threadIdx.y) * p + colNum];
         }
         else
         {
-            tile_x[T_y][T_x] = 0.0;
+            tile_x[threadIdx.y][threadIdx.x] = 0.0;
         }
 
         // sync all the threads in the block so faster threads don't work with uninitialized memory
@@ -61,7 +55,7 @@ __global__ void tiledMultiplyMatricesKernel(float* d_x, float* d_y, float* d_z, 
         // calculate a part of the dot product of each element of the result matrix
         for(int j = 0; j < TILE_WIDTH; ++j)
         {
-            result += tile_x[T_y][j] * tile_y[j][T_x];
+            result += tile_x[threadIdx.y][j] * tile_y[j][threadIdx.x];
         }
 
         // sync all the threads to prevent the contents of the shared memory being overwritten by faster threads when they finish one iteration of the most outside for loop
