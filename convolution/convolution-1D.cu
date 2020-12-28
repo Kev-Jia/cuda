@@ -21,7 +21,7 @@ __global__ void convolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, siz
 
     // iterate through all the elements in the mask
     // here's where the actual convolution operation will occur
-    for(int j = 0; j < maskLength; j++)
+    for(int j = 0; j < maskLength; ++j)
     {
         // this if statement is a boundary condition check
         // it checks whether the indexes needed for the convolution operation are within the bounds of the input array
@@ -60,8 +60,8 @@ void errorCheck(unsigned int line)
 void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskLength)
 {
     // define and initialize dimension variables containing data regarding the dimensions of the grid and the dimensions of each block
-    dim3 numOfBlocks(ceil(length / 64.0), 1, 1);
-    dim3 numOfThreads(64, 1, 1);
+    dim3 numOfBlocks(ceil(length / 1024.0), 1, 1);
+    dim3 numOfThreads(1024, 1, 1);
 
     // define and initialize variables containing the number of bytes in each array
     size_t bytes_m = length * sizeof(float);
