@@ -8,7 +8,7 @@
 #define BLOCK_WIDTH 32
 
 // CUDA kernel function
-__global__ void tiledConvolution_1D_Kernel(float* d_m, const float* __restrict__ d_mask, float* d_n, size_t a, size_t b, size_t maskWidth, int N_TILE_WIDTH)
+__global__ void tiledConvolution_2D_Kernel(float* d_m, const float* __restrict__ d_mask, float* d_n, size_t a, size_t b, size_t maskWidth, int N_TILE_WIDTH)
 {
     // define and initialize the variable where the resulting element of the convolution operation will be calculated and stored
     // this is to minimize writes to global memory
@@ -76,7 +76,7 @@ void errorCheck(unsigned int line)
 }
 
 // host function that calls the CUDA kernel
-void convolution_1D(float* m, float* mask, float* n, size_t a, size_t b, size_t maskWidth, int N_TILE_WIDTH)
+void convolution_2D(float* m, float* mask, float* n, size_t a, size_t b, size_t maskWidth, int N_TILE_WIDTH)
 {
     // define and initialize dimension variables containing data regarding the dimensions of the grid and the dimensions of each block
     dim3 numOfBlocks(ceil(b / (float) N_TILE_WIDTH), ceil(a / (float) N_TILE_WIDTH), 1);
@@ -107,7 +107,7 @@ void convolution_1D(float* m, float* mask, float* n, size_t a, size_t b, size_t 
     errorCheck(__LINE__);
 
     // call the CUDA kernel and check for CUDA errors
-    tiledConvolution_1D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, a, b, maskWidth,  N_TILE_WIDTH);
+    tiledConvolution_2D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, a, b, maskWidth,  N_TILE_WIDTH);
     errorCheck(__LINE__);
     
     // copy the data of the result array from global memory to host DRAM and check for CUDA errors
@@ -158,7 +158,7 @@ int main()
     }
 
     // perform 1D convolution operation on input array m using a given mask array
-    convolution_1D(m, mask, n, a, b, maskWidth, N_TILE_WIDTH);
+    convolution_2D(m, mask, n, a, b, maskWidth, N_TILE_WIDTH);
 
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
