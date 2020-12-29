@@ -43,7 +43,7 @@ __global__ void tiledConvolution_2D_Kernel(float* d_m, const float* __restrict__
     // only allow a certain amount of threads per block to participate in calculating the result variable
     // because we only need to calculate N_TILE_LENGTH elements
     // < and not <= because of 0-based indexing
-    if(threadIdx.y < N_TILE_WIDTH && threadIdx.x < N_TILE_WIDTH)
+    if(threadIdx.y < N_TILE_WIDTH && threadIdx.x < N_TILE_WIDTH && n_row < a && n_col < b)
     {
         // calculate value of result element
         for(int i = 0; i < maskWidth; ++i)
@@ -92,7 +92,7 @@ void convolution_2D(float* m, float* mask, float* n, size_t a, size_t b, size_t 
     float* d_n;
 
     // allocate global memory for each array on the device and check for CUDA errors
-    // input bytes variable is used for result array because both arrays have the same length
+    // input bytes variable is used for result array because cuda-memcheck 0 errors but illegal memory accessboth arrays have the same length
     cudaMalloc((void**) &d_m, bytes_m);
     errorCheck(__LINE__);
     cudaMalloc((void**) &d_mask, bytes_mask);
@@ -106,7 +106,8 @@ void convolution_2D(float* m, float* mask, float* n, size_t a, size_t b, size_t 
     cudaMemcpy(d_mask, mask, bytes_mask, cudaMemcpyHostToDevice);
     errorCheck(__LINE__);
 
-    // call the CUDA kernel and check for CUDA errors
+    // call the CUDA kernel and check for CUDA errorswarning: argument is incompatible with corresponding format string conversion
+
     tiledConvolution_2D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, a, b, maskWidth,  N_TILE_WIDTH);
     errorCheck(__LINE__);
     
@@ -131,11 +132,14 @@ int main()
     // get the details regarding the start time of this program and store it in the start struct
     clock_gettime(CLOCK_REALTIME, &start);
     
+    // initialize pseudo-random number generator with seed of current seconds since 01/01/1970
+    srand(time(NULL));
+    
     // define and initialize dimension variables for each array
     // the input and result arrays have the same dimensions and thus share dimension variables
     // int instead of size_t for result tile width because otherwise typecasting to float will cause errors in the host function that calls the kernel
-    size_t a = rand() % 257 + 3840;
-    size_t b = rand() % 257 + 3840;
+    size_t a = rand() % 385 + 5760;
+    size_t b = rand() % 385 + 5760;
     size_t maskWidth = 2 * (rand() % 7 + 1) + 1;
     
     int N_TILE_WIDTH = BLOCK_WIDTH - (maskWidth - 1);
@@ -154,12 +158,13 @@ int main()
     // assign a pseudo-random float value from 0 to 1 with a precision of 3 decimal places for each element in mask array
     for(int j = 0; j < maskWidth * maskWidth; ++j)
     {
-       mask[j] =  rand() % 1001 / 1000.0;
+       mask[j] = rand() % 1001 / 1000.0;
+
     }
 
     // perform 1D convolution operation on input array m using a given mask array
     convolution_2D(m, mask, n, a, b, maskWidth, N_TILE_WIDTH);
-
+    
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
 

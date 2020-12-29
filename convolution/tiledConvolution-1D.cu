@@ -125,6 +125,9 @@ int main()
     // get the details regarding the start time of this program and store it in the start struct
     clock_gettime(CLOCK_REALTIME, &start);
     
+    // initialize pseudo-random number generator with seed of current seconds since 01/01/1970
+    srand(time(NULL));
+    
     // define and initialize size variables for each array
     // the input and result arrays have the same size and thus share a size variable
     // int instead of size_t for result tile length because otherwise typecasting to float will cause errors in the host function that calls the kernel
@@ -146,7 +149,7 @@ int main()
     // assign a pseudo-random float value from 0 to 1 with a precision of 3 decimal places for each element in mask array
     for(int j = 0; j < maskLength; ++j)
     {
-       mask[j] =  rand() % 1001 / 1000.0;
+       mask[j] = rand() % 1001 / 1000.0;
     }
 
     // perform 1D convolution operation on input array m using a given mask array

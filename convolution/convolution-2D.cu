@@ -5,38 +5,45 @@
 #include <stdlib.h>
 
 // CUDA kernel function
-__global__ void convolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, size_t length, size_t maskLength)
+__global__ void convolution_2D_Kernel(float* d_m, float* d_mask, float* d_n, size_t a, size_t b, size_t maskWidth)
 {
     // define and initialize the variable that will be used for indexing
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     // define and initialize the variable that will allow the mask to align correctly with input array d_m
     // integer division is fine because it always truncates
-    // we will only be using odd values for maskLength anyway
+    // we will only be using odd values for maskWidth anyway
     // the truncation of integer division will provide the perfect offset for aligning the centre element of the mask with the target d_m element
-    int m_index = i - (maskLength / 2);
-    
+    int m_row = j - maskWidth / 2;
+    int m_col = i - maskWidth / 2;
+
     // only have threads within the range of the length of the result array calculate an element of it
     // this is to prevent global memory segfaults
-    if(i < length)
+    if(i < b && j < a)
     {
         // iterate through all the elements in the mask
         // here's where the actual convolution operation will occur
-        for(int j = 0; j < maskLength; ++j)
+        for(int k = 0; k < maskWidth; ++k)
         {
-            // this if statement is a boundary condition check
-            // it checks whether the indexes needed for the convolution operation are within the bounds of the input array
-            // if they are not
-            // extra "ghost" elements past the beginning and end of the input array are used
-            // these elements are set to 0 in our code
-            // this ghost element stuff is done implicitly
-            // as there is no need to do it explicitly, since 0 does not change the resulting element of the convolution operation on a specific element
-            // we just leave the accumulating result of the convolution operation alone if the indexes are out of bounds
-            if(m_index + j >= 0 && m_index + j < length)
+            for(int l = 0; l < maskWidth; ++l)
             {
-                // if the boundary check is satisfied
-                // then accumulate one part of the convolution operation to the result element of the result d_n array
-                d_n[i] += d_m[m_index + j] * d_mask[j];
+                // this if statement is a boundary condition check
+                // it checks whether the indexes needed for the convolution operation are within the bounds of the input array
+                // if they are not
+                // extra "ghost" elements past the beginning and end of the input array are used
+                // these elements are set to 0 in our code
+                // this ghost element stuff is done implicitly
+                // as there is no need to do it explicitly, since 0 does not change the resulting element of the convolution operation on a specific element
+                // we just leave the accumulating result of the convolution operation alone if the indexes are out of bounds
+                if(m_row + l >= 0 && m_row + l < a && m_col + k >= 0 && m_col + k < b)
+                {
+                    // if the boundary check is satisfied
+                    // then accumulate one part of the convolution operation to the result element of the result d_n array
+                    // the convolution operation is done column by column to allow the global memory accesses to be coalesced
+                    // this allows us to increase memory bandwidth
+                    d_n[j * b + i] += d_m[(m_row + l) * b + m_col + k] * d_mask[l * maskWidth + k];
+                }
             }
         }
     }
@@ -59,16 +66,16 @@ void errorCheck(unsigned int line)
 }
 
 // host function that calls the CUDA kernel
-void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskLength)
+void convolution_2D(float* m, float* mask, float* n, size_t a, size_t b, size_t maskWidth)
 {
     // define and initialize dimension variables containing data regarding the dimensions of the grid and the dimensions of each block
-    dim3 numOfBlocks(ceil(length / 1024.0), 1, 1);
-    dim3 numOfThreads(1024, 1, 1);
+    dim3 numOfBlocks(ceil(b / 32.0), ceil(a / 32.0), 1);
+    dim3 numOfThreads(32, 32, 1);
 
     // define and initialize variables containing the number of bytes in each array
-    size_t bytes_m = length * sizeof(float);
-    size_t bytes_mask = maskLength * sizeof(float);
-    size_t bytes_n = length * sizeof(float);
+    size_t bytes_m = a * b * sizeof(float);
+    size_t bytes_mask = maskWidth * maskWidth * sizeof(float);
+    size_t bytes_n = a * b * sizeof(float);
 
     // define the pointers that will point to the start of allocated device memory for each array
     float* d_m;
@@ -90,7 +97,7 @@ void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskL
     errorCheck(__LINE__);
 
     // call the CUDA kernel and check for CUDA errors
-    convolution_1D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, length, maskLength);
+    convolution_2D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, a, b, maskWidth);
     errorCheck(__LINE__);
     
     // copy the data of the result array from global memory to host DRAM and check for CUDA errors
@@ -117,30 +124,31 @@ int main()
     // initialize pseudo-random number generator with seed of current seconds since 01/01/1970
     srand(time(NULL));
     
-    // define and initialize size variables for each array
-    // the input and result arrays have the same size and thus share a size variable
-    size_t length = rand() % 1048577 + 15728640;
-    size_t maskLength = 2 * (rand() % 64 + 192) + 1;
+    // define and initialize dimension variables for each array
+    // the input and result arrays have the same dimensions and thus share dimension variables
+    size_t a = rand() % 385 + 5760;
+    size_t b = rand() % 385 + 5760;
+    size_t maskWidth = 2 * (rand() % 7 + 1) + 1;
 
     // dynamically allocate DRAM memory for the arrays to account for them perhaps being too big to be statically allocated
-    float* m = (float*) malloc(length * sizeof(float));
-    float* mask = (float*) malloc(maskLength * sizeof(float));
-    float* n = (float*) malloc(length * sizeof(float));
+    float* m = (float*) malloc(a * b * sizeof(float));
+    float* mask = (float*) malloc(maskWidth * maskWidth * sizeof(float));
+    float* n = (float*) malloc(a * b * sizeof(float));
 
     // assign a pseudo-random integer value from -64 to 64 for each element in input array m
-    for(int i = 0; i < length; ++i)
+    for(int i = 0; i < a * b; ++i)
     {
         m[i] = rand() % 129 - 64;
     }
   
     // assign a pseudo-random float value from 0 to 1 with a precision of 3 decimal places for each element in mask array
-    for(int j = 0; j < maskLength; ++j)
+    for(int j = 0; j < maskWidth; ++j)
     {
        mask[j] = rand() % 1001 / 1000.0;
     }
 
     // perform 1D convolution operation on input array m using a given mask array
-    convolution_1D(m, mask, n, length, maskLength);
+    convolution_2D(m, mask, n, a, b, maskWidth);
 
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
