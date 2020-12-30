@@ -126,8 +126,8 @@ int main()
     
     // define and initialize dimension variables for each array
     // the input and result arrays have the same dimensions and thus share dimension variables
-    size_t a = rand() % 257 + 3840;
-    size_t b = rand() % 257 + 3840;
+    size_t a = rand() % 513 + 7680;
+    size_t b = rand() % 513 + 7680;
     size_t maskWidth = 2 * (rand() % 7 + 1) + 1;
 
     // dynamically allocate DRAM memory for the arrays to account for them perhaps being too big to be statically allocated
@@ -142,12 +142,12 @@ int main()
     }
   
     // assign a pseudo-random float value from 0 to 1 with a precision of 3 decimal places for each element in mask array
-    for(int j = 0; j < maskWidth; ++j)
+    for(int j = 0; j < maskWidth * maskWidth; ++j)
     {
         mask[j] = rand() % 1001 / 1000.0;
     }
 
-    // perform 1D convolution operation on input array m using a given mask array
+    // perform 2D convolution operation on input array m using a given mask array
     convolution_2D(m, mask, n, a, b, maskWidth);
     
     // get the details regarding the end time of this program and store it in the end struct

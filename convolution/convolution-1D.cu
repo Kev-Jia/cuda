@@ -14,7 +14,7 @@ __global__ void convolution_1D_Kernel(float* d_m, float* d_mask, float* d_n, siz
     // integer division is fine because it always truncates
     // we will only be using odd values for maskLength anyway
     // the truncation of integer division will provide the perfect offset for aligning the centre element of the mask with the target d_m element
-    int m_index = i - (maskLength / 2);
+    int m_index = i - maskLength / 2;
     
     // only have threads within the range of the length of the result array calculate an element of it
     // this is to prevent global memory segfaults
@@ -138,7 +138,7 @@ int main()
     {
         mask[j] = rand() % 1001 / 1000.0;
     }
-
+    
     // perform 1D convolution operation on input array m using a given mask array
     convolution_1D(m, mask, n, length, maskLength);
     

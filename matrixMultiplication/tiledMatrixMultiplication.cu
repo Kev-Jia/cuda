@@ -170,7 +170,7 @@ int main()
 
     // multiply the input matrices x and y
     multiplyMatrices(x, y, z, m, n, p);
-
+    
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
 

@@ -154,7 +154,7 @@ int main()
 
     // perform 1D convolution operation on input array m using a given mask array
     convolution_1D(m, mask, n, length, maskLength, N_TILE_LENGTH);
-
+    
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
 
