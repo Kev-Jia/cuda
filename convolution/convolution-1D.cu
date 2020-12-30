@@ -136,12 +136,12 @@ int main()
     // assign a pseudo-random float value from 0 to 1 with a precision of 3 decimal places for each element in mask array
     for(int j = 0; j < maskLength; ++j)
     {
-       mask[j] = rand() % 1001 / 1000.0;
+        mask[j] = rand() % 1001 / 1000.0;
     }
 
     // perform 1D convolution operation on input array m using a given mask array
     convolution_1D(m, mask, n, length, maskLength);
-
+    
     // get the details regarding the end time of this program and store it in the end struct
     clock_gettime(CLOCK_REALTIME, &end);
 

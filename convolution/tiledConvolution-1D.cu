@@ -40,7 +40,7 @@ __global__ void tiledConvolution_1D_Kernel(float* d_m, const float* __restrict__
     // only allow a certain amount of threads per block to participate in calculating the result variable
     // because we only need to calculate N_TILE_LENGTH elements
     // < and not <= because of 0-based indexing
-    if(threadIdx.x < N_TILE_LENGTH)
+    if(threadIdx.x < N_TILE_LENGTH && n_index < length)
     {
         // calculate value of result element
         for(int i = 0; i < maskLength; ++i)
@@ -149,7 +149,7 @@ int main()
     // assign a pseudo-random float value from 0 to 1 with a precision of 3 decimal places for each element in mask array
     for(int j = 0; j < maskLength; ++j)
     {
-       mask[j] = rand() % 1001 / 1000.0;
+        mask[j] = rand() % 1001 / 1000.0;
     }
 
     // perform 1D convolution operation on input array m using a given mask array
