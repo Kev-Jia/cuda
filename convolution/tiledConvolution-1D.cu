@@ -132,7 +132,7 @@ int main()
     // the input and result arrays have the same size and thus share a size variable
     // int instead of size_t for result tile length because otherwise typecasting to float will cause errors in the host function that calls the kernel
     size_t length = rand() % 1048577 + 15728640;
-    size_t maskLength = 2 * (rand() % 64 + 192) + 1;
+    size_t maskLength = 121;
     int N_TILE_LENGTH = BLOCK_SIZE - (maskLength - 1);
 
     // dynamically allocate DRAM memory for the arrays to account for them perhaps being too big to be statically allocated

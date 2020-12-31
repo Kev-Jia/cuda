@@ -120,7 +120,7 @@ int main()
     // define and initialize size variables for each array
     // the input and result arrays have the same size and thus share a size variable
     size_t length = rand() % 1048577 + 15728640;
-    size_t maskLength = 2 * (rand() % 64 + 192) + 1;
+    size_t maskLength = 121;
 
     // dynamically allocate DRAM memory for the arrays to account for them perhaps being too big to be statically allocated
     float* m = (float*) malloc(length * sizeof(float));

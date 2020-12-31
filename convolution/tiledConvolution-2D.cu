@@ -99,15 +99,14 @@ void convolution_2D(float* m, float* mask, float* n, size_t a, size_t b, size_t 
     errorCheck(__LINE__);
     cudaMalloc((void**) &d_n, bytes_m);
     errorCheck(__LINE__);
-
+    
     // copy the data of each array to allocated global memory on the device and check for CUDA errors
     cudaMemcpy(d_m, m, bytes_m, cudaMemcpyHostToDevice);
     errorCheck(__LINE__);
     cudaMemcpy(d_mask, mask, bytes_mask, cudaMemcpyHostToDevice);
     errorCheck(__LINE__);
 
-    // call the CUDA kernel and check for CUDA errorswarning: argument is incompatible with corresponding format string conversion
-
+    // call the CUDA kernel and check for CUDA errors
     tiledConvolution_2D_Kernel<<<numOfBlocks, numOfThreads>>>(d_m, d_mask, d_n, a, b, maskWidth,  N_TILE_WIDTH);
     errorCheck(__LINE__);
     
@@ -138,9 +137,9 @@ int main()
     // define and initialize dimension variables for each array
     // the input and result arrays have the same dimensions and thus share dimension variables
     // int instead of size_t for result tile width because otherwise typecasting to float will cause errors in the host function that calls the kernel
-    size_t a = rand() % 513 + 7680;
-    size_t b = rand() % 513 + 7680;
-    size_t maskWidth = 2 * (rand() % 7 + 1) + 1;
+    size_t a = rand() % 257 + 3840;
+    size_t b = rand() % 257 + 3840;
+    size_t maskWidth = 11;
     
     int N_TILE_WIDTH = BLOCK_WIDTH - (maskWidth - 1);
 
