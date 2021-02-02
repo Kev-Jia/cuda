@@ -78,7 +78,7 @@ int main()
 
     srand(time(NULL));
 
-    size_t size =  16777216;
+    size_t size = 268435456;
 
     float* input = (float*) malloc(size * sizeof(float));
     float* output = (float*) malloc((size / (2 * BLOCK_SIZE)) * sizeof(float));
