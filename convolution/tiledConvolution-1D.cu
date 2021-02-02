@@ -95,8 +95,6 @@ void convolution_1D(float* m, float* mask, float* n, size_t length, size_t maskL
 int main()
 {
     struct timespec start, end;
-
-    clock_gettime(CLOCK_REALTIME, &start);
     
     srand(time(NULL));
     
@@ -118,6 +116,8 @@ int main()
         mask[j] = rand() % 1001 / 1000.0;
     }
 
+    clock_gettime(CLOCK_REALTIME, &start);
+    
     // do convolution
     convolution_1D(m, mask, n, length, maskLength, N_TILE_LENGTH);
     
@@ -129,4 +129,3 @@ int main()
 
     return 0;
 }
-

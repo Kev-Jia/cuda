@@ -85,8 +85,6 @@ int main()
 {
     struct timespec start, end;
 
-    clock_gettime(CLOCK_REALTIME, &start);
-
     srand(time(NULL));
 
     size_t a = rand() % 257 + 3840;
@@ -107,6 +105,8 @@ int main()
         mask[j] = rand() % 1001 / 1000.0;
     }
 
+    clock_gettime(CLOCK_REALTIME, &start);
+    
     // do convolution
     convolution_2D(m, mask, n, a, b, maskWidth);
 

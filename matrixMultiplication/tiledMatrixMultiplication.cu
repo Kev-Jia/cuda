@@ -109,8 +109,6 @@ void multiplyMatrices(float* x, float* y, float* z, int m, int n, int p)
 int main()
 {
     struct timespec start, end;
-    
-    clock_gettime(CLOCK_REALTIME, &start);
 
     srand(time(NULL));
 
@@ -132,6 +130,8 @@ int main()
         y[i] = rand() % 129 - 64;
     }
 
+    clock_gettime(CLOCK_REALTIME, &start);
+    
     // do matrix multiplication
     multiplyMatrices(x, y, z, m, n, p);
 

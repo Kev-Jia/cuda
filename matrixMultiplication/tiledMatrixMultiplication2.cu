@@ -92,8 +92,6 @@ int main()
 {
     struct timespec start, end;
 
-    clock_gettime(CLOCK_REALTIME, &start);
-
     srand(time(NULL));
 
     size_t m = 4096;
@@ -114,6 +112,8 @@ int main()
         y[i] = rand() % 129 - 64;
     }
 
+    clock_gettime(CLOCK_REALTIME, &start);
+    
     // do matrix multiplication
     multiplyMatrices(x, y, z, m, n, p);
 

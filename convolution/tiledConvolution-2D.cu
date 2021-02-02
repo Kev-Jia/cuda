@@ -101,8 +101,6 @@ void convolution_2D(float* m, float* mask, float* n, size_t a, size_t b, size_t 
 int main()
 {
     struct timespec start, end;
-
-    clock_gettime(CLOCK_REALTIME, &start);
     
     srand(time(NULL));
     
@@ -126,6 +124,8 @@ int main()
         mask[j] = rand() % 1001 / 1000.0;
     }
 
+    clock_gettime(CLOCK_REALTIME, &start);
+    
     // do convolution
     convolution_2D(m, mask, n, a, b, maskWidth, N_TILE_WIDTH);
     

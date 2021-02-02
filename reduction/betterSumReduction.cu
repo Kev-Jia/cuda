@@ -15,13 +15,13 @@ __global__ void sumReductionKernel(float* d_input, float* d_output)
     output[threadIdx.x] = d_input[startingIndex + threadIdx.x];
     output[blockDim.x + threadIdx.x] = d_input[startingIndex + blockDim.x + threadIdx.x];
     
-    for(int step = 1; step <= blockDim.x; step *= 2)
+    for(int step = blockDim.x; step > 0; step /= 2)
     {
         __syncthreads();
         
-        if(threadIdx.x % step == 0)
+        if(threadIdx.x < step)
         {
-            output[2 * threadIdx.x] += output[2 * threadIdx.x + step];
+            output[threadIdx.x] += output[threadIdx.x + step];
         }
     }
     
@@ -87,7 +87,7 @@ int main()
     {
         input[i] = rand() % 129 - 64;
     }
-    
+
     clock_gettime(CLOCK_REALTIME, &start);
 
     // do sum reduction
