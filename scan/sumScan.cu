@@ -3,7 +3,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 1024
 
 // first kernel - does scan for each block
 __global__ void blockSumScanKernel(float* d_input, float* d_output, size_t size)
@@ -99,7 +99,7 @@ int main()
 
     srand(time(NULL));
 
-    size_t size = 1048576;
+    size_t size = 4194304;
 
     float* input = (float*) malloc(size * sizeof(float));
     float* output = (float*) malloc(size * sizeof(float));
