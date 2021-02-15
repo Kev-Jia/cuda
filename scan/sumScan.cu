@@ -16,18 +16,21 @@ __global__ void blockSumScanKernel(float* d_input, float* d_output, size_t size)
     if(i < size)
     {
         blockOutput[threadIdx.x] = d_input[i];
+    }
         
-        for(int step = 1; step <= threadIdx.x; step *= 2)
-        {
-            __syncthreads();
-            
-            float chunk = blockOutput[threadIdx.x - step];
-            
-            __syncthreads();
-            
-            blockOutput[threadIdx.x] += chunk;
-        }
+    for(int step = 1; step <= threadIdx.x; step *= 2)
+    {
+        __syncthreads();
         
+        float chunk = blockOutput[threadIdx.x - step];
+        
+        __syncthreads();
+        
+        blockOutput[threadIdx.x] += chunk;
+    }
+    
+    if(i < size)
+    {    
         d_output[i] = blockOutput[threadIdx.x];
     }
 }
